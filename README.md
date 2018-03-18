@@ -1,6 +1,18 @@
 # Embeddings, Categorical Data, and Neural Networks
 
+#### Welcome! 
 
+This is a short implementation to show how embeddings can be trained simultaneously while trying to train a neural network. The model used is a `EmbeddingModel` with a simple 3 layer neural network. (though any structure can be provided in a list format). Pictures, diagrams are forthcoming. Still under construction.
+
+
+#### Directory layout
+```
+|- utils.py : basic utilities for loading, cleaning, and manipulating data
+|- model.py : contains the pytorch implementation to train Embeddings
+|- main.py  : runs the main program, loading data, and training model
+```
+
+#### Sample output for running the program
 ```
 $ python main.py
 
