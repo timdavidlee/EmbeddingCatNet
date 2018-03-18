@@ -17,54 +17,49 @@ def norm_init_emb(embedding):
 
 
 class EmbeddingModel(nn.Module):
-	"""
-	Model at a high level, is made of of the following parts:
+    """
+    Model at a high level, is made of of the following parts:
 
-	1. Collection of Embeddings ( for all categorical vars)
-	--------------------------------------------------------
-		- each field will have a matrix associated with it
-		- the row represents the values
-		- the columns represent a embedding dimension (arbitrary)
-		- generally don't want to choose a embedding dimension
-		  greater than the cardinality. If you have 2 unique choices
-		  for a field, don't make your vector dimension 50
+    1. Collection of Embeddings ( for all categorical vars)
+    --------------------------------------------------------
+        - each field will have a matrix associated with it
+        - the row represents the values
+        - the columns represent a embedding dimension (arbitrary)
+        - generally don't want to choose a embedding dimension
+          greater than the cardinality. If you have 2 unique choices
+          for a field, don't make your vector dimension 50
 
-	2. A shallow Neural network
-	-----------------------------
-	    - will use linear layers in combination with batch normalization
-	      and some dropout to reduce overfitting
+    2. A shallow Neural network
+    -----------------------------
+        - will use linear layers in combination with batch normalization
+          and some dropout to reduce overfitting
 
-	3. A classification layer
-	-----------------------------
-		- for this particular problem, a classification layer was attached
-		  either a sigmoid or a log_softmax for predicting multiclass
+    3. A classification layer
+    -----------------------------
+        - for this particular problem, a classification layer was attached
+          either a sigmoid or a log_softmax for predicting multiclass
 
-	"""
-    def __init__(self,
-                 emb_szs,
-                 layer_sizes,
-                 output_dim,
-                 drop_pct,
-                 emb_drop_pct):
+    """
+    def __init__(self, emb_szs, layer_sizes, output_dim, drop_pct, emb_drop_pct):
 
-    	"""
-		Initializes the embedding class
-		layer_sizes: Expects a list [ 1000, 300, 100] means that 
-					 3 linear layers will be made with 1000, 300, 100 
-					 respectively
-		emb_szs: [(5,2), (1000, 50), (10,5)] - each tuple represents
-				 the level of cardinality (5)
-				 and the desired level of embedding, (,2). Which 
-				 we are using a rough rule of half cardinality, but
-				 no greater than 50
+        """
+        Initializes the embedding class
+        layer_sizes: Expects a list [ 1000, 300, 100] means that 
+                     3 linear layers will be made with 1000, 300, 100 
+                     respectively
+        emb_szs: [(5,2), (1000, 50), (10,5)] - each tuple represents
+                 the level of cardinality (5)
+                 and the desired level of embedding, (,2). Which 
+                 we are using a rough rule of half cardinality, but
+                 no greater than 50
 
-		drop_pct : a float from 0 to 1, this value is how much dropout
-				   to add to the sub-unit stack, consider this the level
-				   of regularization. 1 is 100% drop out = no data
+        drop_pct : a float from 0 to 1, this value is how much dropout
+                   to add to the sub-unit stack, consider this the level
+                   of regularization. 1 is 100% drop out = no data
 
-		emb_drop_pct: a float from 0 to 1, this is how much initial dropout
-					  to apply to the 
-    	"""
+        emb_drop_pct: a float from 0 to 1, this is how much initial dropout
+                      to apply to the 
+        """
         super(EmbeddingModel, self).__init__()
 
         # Number of layers
@@ -95,12 +90,12 @@ class EmbeddingModel(nn.Module):
         # the sub-unit is:
 
         for i in range(self.n_layers):
-	        # One Subunit:
-	        # -- Linear
-	        # -- Relu
-	        # -- BatchNorm
-	        # -- Drop_out
-        	# gets the current layer size from 
+            # One Subunit:
+            # -- Linear
+            # -- Relu
+            # -- BatchNorm
+            # -- Drop_out
+            # gets the current layer size from 
             current_layer_size = layer_sizes[i]
             next_layer_size = layer_sizes[i + 1]
 
@@ -124,8 +119,8 @@ class EmbeddingModel(nn.Module):
                 kaiming_normal(ly.weight.data)
 
     def forward(self, x):
-    	# the regular data row comes in
-    	# for each value, lookup the corresponding vector
+        # the regular data row comes in
+        # for each value, lookup the corresponding vector
         lkups = [emb(x[:, idx]) for idx, emb in enumerate(self.embs)]
 
         # add all the vector dataframes together        
@@ -136,9 +131,9 @@ class EmbeddingModel(nn.Module):
         # NN model
         x = self.seq_model(x)
         if self.output_dim == 1:
-        	# binary
+            # binary
             x = F.sigmoid(x)
         else:
-        	# multiclass classification
+            # multiclass classification
             x = F.log_softmax(x, self.output_dim)
         return x
