@@ -4,6 +4,7 @@ from utils import load_wids_xy_data, get_mappers
 import torch
 import torch.utils.data as data_utils
 import torch.optim as optim
+import pandas as pd
 import torch.autograd as autograd
 from torch.autograd import Variable
 from torch.nn.modules.loss import BCELoss
@@ -33,20 +34,20 @@ def train_model(model, train_loader, n_epochs, optimizer, loss_fn):
         print('learning rate %f' % learning_rate)
         for param_group in optimizer.param_groups:
             param_group['lr'] = learning_rate
-            
+
         for epoch in range(n_epochs):
 
             # collecting stats for console printing
             running_loss = 0.0
             running_correct = 0
-            
+
             # create the dataloader
             train_dl = iter(train_loader)
 
             # start mini-batch training
             for i, batch in enumerate(train_dl):
                 # unpack data and labels
-                data, labels = batch                
+                data, labels = batch
                 data_var = Variable(data)
                 label_var = Variable(labels.float(), requires_grad=False)
 
@@ -57,29 +58,31 @@ def train_model(model, train_loader, n_epochs, optimizer, loss_fn):
                 y_pred = model(data_var)
 
                 # calculate loss
-                loss = loss_fn(y_pred, label_var)                
+                loss = loss_fn(y_pred, label_var)
 
-                # calculate hard predictions for running statistic (print to console)
+                # calculate hard predictions for running
+                # statistic (print to console)
                 y_pred_hard = y_pred > 0.5
-                correct = (label_var.view(-1,1).eq(y_pred_hard.float())).sum()
-                running_correct += correct.float().data    
+                correct = (label_var.view(-1, 1).eq(y_pred_hard.float())).sum()
+                running_correct += correct.float().data
 
                 # aggregate loss for running statistic (print to console)
                 running_loss += loss.data[0]
 
                 # status of training: print to console
                 if i % 25 == 24:
-                    avg_loss.append(running_loss/25)
-                    acc = running_correct/50/25.
-                    print('[%d/%d] - %d/%d loss: %f, acc: %f' %(epoch+1, n_epochs, i*bz, 18200, running_loss/25, acc))
-                    
+                    avg_loss.append(running_loss / 25)
+                    acc = running_correct / 50 / 25.
+                    print('[%d/%d] - %d/%d loss: %f, acc: %f' % (epoch + 1,
+                        n_epochs, i * bz, 18200, running_loss / 25, acc))
+
                     # reset the overview statistic
                     running_loss = 0
                     running_correct = 0
 
                 # back propogation
                 optimizer.zero_grad()
-                loss.backward()        
+                loss.backward()
                 optimizer.step()
 
 
@@ -90,7 +93,7 @@ def get_embeddings_from_model(model):
     - model.embs, which is a collection of torch.nn.Embedding objects
 
     The weights can be accessed via: model.embs[0].weight.data
-    """    
+    """
     keys = mappers.keys()
     emb_mtx = {}
     for field, emb in zip(keys, model.embs):
@@ -99,44 +102,42 @@ def get_embeddings_from_model(model):
 
 
 def get_emb_df(X, mappers, emb_mtx):
-	"""
-	Takes in :
-	1. X: original data
-	2. mappers: mapping categories to integers
-	3. the trained vectors for the categories
+    """
+    Takes in :
+    1. X: original data
+    2. mappers: mapping categories to integers
+    3. the trained vectors for the categories
 
-	returns a new dataframe with all categories
-	replaced with their vector formats
-	"""
-
-
+    returns a new dataframe with all categories
+    replaced with their vector formats
+    """
     cat_field_emb_dfs = []
-    
+
     print('applying embeddings')
     for col in X.columns.values:
-    	# for each field , remap categorical values --> ints
+        # for each field , remap categorical values --> ints
         idxs = X[col].map(mappers[col])
-        
+
         # (for test data) fill new values /nones with new value 
         # (will be global mean)
         idxs[idxs.isna()] = max(idxs)+1
         idxs = np.array(idxs, dtype = int)
-        
+
         # get embedding matrix for this field
         mtx = emb_mtx[col]
-        
+
         # calculate global mean for missing values
-        glb_mean = np.mean(mtx,axis=0)        
-        
+        glb_mean = np.mean(mtx, axis=0)
+
         # add global mean to bottom of matrix
-        mtx = np.concatenate([mtx, glb_mean.reshape(1,-1)], axis=0)
-        
+        mtx = np.concatenate([mtx, glb_mean.reshape(1, -1)], axis=0)
+
         # use the categorical values --> ints as indices
         # to rearrange the embedding matrix by swapping rows
         # mtx[[2,2,2], :] - > will create a matrix with row 2 x 3 times
         jf = pd.DataFrame(mtx[idxs, :])
-        jf.columns = [col+'_%d' %i for i in jf.columns]
-        
+        jf.columns = [col+'_%d' % i for i in jf.columns]
+
         # collect the dataframe
         cat_field_emb_dfs.append(jf)
 
@@ -200,11 +201,11 @@ if __name__ == '__main__':
     X_emb_df = get_emb_df(X, mappers, emb_mtx)
 
     """
-	Can run XGBoost or any other model after this point
-	simply have your 
+    Can run XGBoost or any other model after this point
+    simply have your 
 
-	model = XGClassifier(...)
-	model.fit(X_emb_df, y)
+    model = XGClassifier(...)
+    model.fit(X_emb_df, y)
 
     """
 

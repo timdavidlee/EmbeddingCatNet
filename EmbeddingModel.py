@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 def norm_init_emb(embedding):
     """
-    Limit the random initialization 
+    Limit the random initialization
     of embeddings to a specific cutoff
     1/dim, Doesn't return anything
     implicitly changes the data inplace
@@ -44,12 +44,12 @@ class EmbeddingModel(nn.Module):
 
         """
         Initializes the embedding class
-        layer_sizes: Expects a list [ 1000, 300, 100] means that 
-                     3 linear layers will be made with 1000, 300, 100 
+        layer_sizes: Expects a list [ 1000, 300, 100] means that
+                     3 linear layers will be made with 1000, 300, 100
                      respectively
         emb_szs: [(5,2), (1000, 50), (10,5)] - each tuple represents
                  the level of cardinality (5)
-                 and the desired level of embedding, (,2). Which 
+                 and the desired level of embedding, (,2). Which
                  we are using a rough rule of half cardinality, but
                  no greater than 50
 
@@ -58,7 +58,7 @@ class EmbeddingModel(nn.Module):
                    of regularization. 1 is 100% drop out = no data
 
         emb_drop_pct: a float from 0 to 1, this is how much initial dropout
-                      to apply to the 
+                      to apply to the
         """
         super(EmbeddingModel, self).__init__()
 
@@ -95,7 +95,7 @@ class EmbeddingModel(nn.Module):
             # -- Relu
             # -- BatchNorm
             # -- Drop_out
-            # gets the current layer size from 
+            # gets the current layer size from
             current_layer_size = layer_sizes[i]
             next_layer_size = layer_sizes[i + 1]
 
